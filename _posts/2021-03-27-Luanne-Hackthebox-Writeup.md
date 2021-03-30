@@ -1,6 +1,6 @@
 ---
 title: Luanne Hackthebox Writeup
-date: 2020-03-27 09:00:00 +0530
+date: 2021-03-27 09:00:00 +0530
 categories: [Hackthebox, Active]
 tags: [bsd,doas,hashcat,cracking,hashes,ssh,reverse shell,lua,gobuster,directory enumeration,netbsd,luanne,hackthebox,easy]     # TAG names should always be lowercase
 image: /assets/img/luanne-hackthebox/luanne-pic.png
