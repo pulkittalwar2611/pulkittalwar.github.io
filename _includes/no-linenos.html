@@ -7,7 +7,7 @@
 {% endcomment %}
 
 {% assign content = include.content %}
-
+<!-- Bidvertiser2052788 -->
 {% if content contains '<td class="rouge-gutter gl"><pre class="lineno">' %}
   {% assign content = content | replace: '<td class="rouge-gutter gl"><pre class="lineno">', '<!-- <td class="rouge-gutter gl"><pre class="lineno">'%}
   {% assign content = content | replace: '</td><td class="rouge-code">', '</td> --><td class="rouge-code">' %}
