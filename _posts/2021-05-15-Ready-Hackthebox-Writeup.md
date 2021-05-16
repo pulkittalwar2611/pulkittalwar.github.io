@@ -1,6 +1,6 @@
 ---
 title: Ready Hackthebox Writeup
-date: 2021-05-16 09:00:00 +0530
+date: 2021-05-15 09:00:00 +0530
 categories: [Hackthebox, Active]
 tags: [linux,container,gitlab,ssrf,rce,gitlab 11.4.7,medium,hackthebox,ready]     # TAG names should always be lowercase
 image: /assets/img/ready-hackthebox/ready-pic.jpg
