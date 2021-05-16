@@ -1,6 +1,6 @@
 ---
 title: Poison Hackthebox Writeup
-date: 2021-01-22 04:00:00 +0800
+date: 2020-12-22 04:00:00 +0800
 categories: [Hackthebox, Retired]
 tags: [freebsd,vnc,log poisoning,php,reverse shell,lfi to rce]     # TAG names should always be lowercase
 image: /assets/img/poison-hackthebox/poison-pic.png
