@@ -21,7 +21,7 @@ I started giving my 100% from 24th May 2021, as I have a regular job I knew it'l
 
 I generally studied after my office from 10pm to 4am sometimes 5am, I was making sure to give atleast 6-7 hours on weekdays and 14-16 hours on weekends and holidays.
 
-Before my labs started I had approximately 1-1.5 months of time. I thought to utilise this time by starting with `Offsensive Security Proving Grounds: Play`. From 25th May to around 10th July 2021 I had rooted 35-40 boxes. If you want to check the list of boxes, please check this [link]().
+Before my labs started I had approximately 1-1.5 months of time. I thought to utilise this time by starting with `Offsensive Security Proving Grounds: Play`. From 25th May to around 10th July 2021 I had rooted 35-40 boxes. If you want to check the list of boxes, please check this [link](https://nonchalant-bracket-413.notion.site/Proving-Grounds-Labs-Play-77be27792bcc493587e01b480ec051a5).
 
 ## My Lab Time
 
@@ -41,7 +41,7 @@ Things were going on and by 28th August 2021 I was able to root around 70 boxes 
 
 ## After Completing Labs
 
-Earlier when I started I thought to prepare the report for those 5 points but then I changed my mind and enrolled myself in `Offensive Security Proving Grounds: Practice`. From 29th August to around 10th September 2021 I had rooted 30-35 boxes. If you want to check the list of boxes, please check this [link]().
+Earlier when I started I thought to prepare the report for those 5 points but then I changed my mind and enrolled myself in `Offensive Security Proving Grounds: Practice`. From 29th August to around 10th September 2021 I had rooted 30-35 boxes. If you want to check the list of boxes, please check this [link](https://nonchalant-bracket-413.notion.site/Proving-Grounds-Labs-Practice-d27fc9eab8b64301ac20d5e88eb6c8a3).
 
 In between I took out time to study BufferOverFlow from [`TryhackMe`](https://tryhackme.com/room/bufferoverflowprep).
 
